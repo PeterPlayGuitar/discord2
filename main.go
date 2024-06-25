@@ -3,11 +3,12 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/websocket"
 )
 
-var port = "16152"
+var port = os.Args[1]
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
