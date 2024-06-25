@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var port = "16152"
+var port = "80"
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
