@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Chat</title>
+</head>
+<body>
+    <h1>Voice Chat</h1>
+    <button onclick="start()">Start</button>
+    <button onclick="stop()">Stop</button>
+    <div style="height: 20px"></div>
+    <div style="background-color: black; padding: 20px 40px; width: 300px;">
+        <span style="color: red;" id="log"></span>
+    </div>
+    <div></div>
+    <!-- <button id="startBtn" onclick="record()">Record</button>
+    <button id="stopBtn" onclick="stopRecording()" disabled>Stop recording</button>
+    <button onclick="play()">Play</button> -->
+    <script>
+        let ws;
+        let mediaRecorder;
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const log = document.getElementById('log')
+
+        function start() {
+            if (!ws || ws.readyState !== WebSocket.OPEN){
+                ws = new WebSocket('ws://localhost:8081/ws');
+            }
+            else
+                return
+
+            ws.addEventListener('open', () => {
+                document.body.style.backgroundColor = "green"
+            });
+
+            ws.addEventListener('close', () => {
+                document.body.style.backgroundColor = "red"
+            });
+
+            ws.onmessage = function(event) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    audioContext.decodeAudioData(reader.result)
+                        .then(buffer => {
+                            const source = audioContext.createBufferSource();
+                            source.buffer = buffer;
+                            source.connect(audioContext.destination);
+                            source.start(0);
+                        })
+                        .catch(err => console.log('Error decoding audio data:', err));
+                };
+                reader.readAsArrayBuffer(event.data);
+            };
+
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(function(stream) {
+                    mediaRecorder = new MediaRecorder(stream);
+                    mediaRecorder.ondataavailable = function(event) {
+                        if (event.data.size > 0) {
+                            ws.send(event.data);
+                        }
+                    };
+                    mediaRecorder.start(500);
+                })
+                .catch(function(err) {
+                    console.error('Error accessing audio: ' + err);
+                });
+        }
+
+        function stop() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+            }
+            if (ws) {
+                ws.close();
+            }
+        }
+    </script>
+</body>
+</html>
